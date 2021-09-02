@@ -1,0 +1,3 @@
+Dataset_process.py:
+1. Convert miniseed files to SAC files
+2. Add station info and event info

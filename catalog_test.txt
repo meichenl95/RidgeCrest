@@ -1,0 +1,38 @@
+
+## ##########################################################
+## Dataset of earthquakes for the Community Stress Drop Validation Study.
+## 
+## M>=1
+## 2019-07-04 00:00:00.000 to 2019-07-18 00:00:00.000
+## 
+## Extracted from Relocated Catalog of Trugman (2020).
+## Trugman, Daniel T. (2020), Stress‐Drop and Source Scaling of the 2019
+## Ridgecrest, California, Earthquake Sequence. Bulletin of the
+## Seismological Society of America; 110 (4): 1859–1871. doi:
+## https://doi.org/10.1785/0120200009
+## 
+## See Electronic Supplement, Dataset S1.
+## 
+## 
+## 
+## Dataset S1. Relocated earthquake catalog. Each row corresponds to an earthquake, and there are 7 columns in total: 
+## 1.	Event ID
+## 2.	Origin Time
+## 3.	Magnitude (SCEDC preferred)
+## 4.	Longitude
+## 5.	Latitude
+## 6.	Depth (km)
+## 7.	Relocated (0 = No, 1 = Yes)
+## ##########################################################
+
+
+ 38443183 2019-07-04 17:33:49.000001  6.40 -117.50383   35.70533 10.500 0
+ 38457511 2019-07-06 03:19:53.040000  7.10 -117.59933   35.76950  8.000 0
+ 38475431 2019-07-07 11:22:16.357000  4.15 -117.59412   35.80698 10.614 1
+ 38541359 2019-07-12 03:27:54.218000  3.94 -117.38146   35.93808  3.098 1
+ 38548295 2019-07-12 13:11:37.980000  4.90 -117.58533   35.63833  9.900 0
+ 38553495 2019-07-13 00:01:55.428000  1.18 -117.69363   35.88078  7.910 1
+ 38553519 2019-07-13 00:06:38.109000  1.63 -117.70910   35.91950  2.770 1
+ 38553575 2019-07-13 00:19:07.386000  2.01 -117.50009   35.66081  5.318 1
+ 38553671 2019-07-13 00:36:16.300000  2.50 -117.55817   35.73900  3.900 0
+ 38553919 2019-07-13 01:16:52.590000  3.19 -117.56704   35.75506  3.536 1
