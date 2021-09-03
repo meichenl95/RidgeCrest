@@ -6,8 +6,20 @@ import os
 import subprocess
 import datetime
 import obspy
+import glob
+
+class Trace:
+    def __init__(self,init_netw,init_stn,init_loc,init_snr):
+        self.netw = init_netw
+        self.stn = init_stn
+        self.loc = init_loc
+        self.snr = init_snr
 
 class Event:
+    freqmin = 0
+    freqmax = 50
+    timebefore = 0
+    timeafter = 0
     def __init__(self,init_id,init_lat,init_lon,init_dep,init_mag,init_datetime):
         self.id = init_id
         self.lat = init_lat
@@ -31,6 +43,45 @@ class Event:
     # Difference of moment magnitude
     def mag_to(self,event2):
         return np.abs(self.mag - event2.mag)
+
+    # compute the frequency range and time window
+    def mag_to_freqtimewin(self):
+        if (self.mag >= 6):
+            self.freqmin = 0.05
+            self.freqmax = 5
+            self.timebefore = 20
+            self.timeafter = 100
+            self.origintime = 90
+        elif (self.mag >= 5 and self.mag < 6):
+            self.freqmin = 0.1
+            self.freqmax = 5
+            self.timebefore = 10
+            self.timeafter = 50
+            self.origintime = 75
+        elif (self.mag >= 4 and self.mag < 5):
+            self.freqmin = 1
+            self.freqmax = 10
+            self.timebefore = 5
+            self.timeafter = 25
+            self.origintime = 60
+        elif (self.mag >= 3 and self.mag < 4):
+            self.freqmin = 2
+            self.freqmax = 20
+            self.timebefore = 3
+            self.timeafter = 12
+            self.origintime = 45
+        elif (self.mag >= 2 and self.mag < 3):
+            self.freqmin = 2
+            self.freqmax = 50
+            self.timebefore = 2
+            self.timeafter = 4
+            self.origintime = 30
+        else:
+            self.freqmin = 5
+            self.freqmax = 50
+            self.timebefore = 0.5
+            self.timeafter = 2.5
+            self.origintime = 15
 
     # string representation
     def __str__(self):
@@ -58,12 +109,39 @@ def select_eventpairs(eventlist,minmagdiff,mintimediff,maxdistdiff):
         eventpairs[eventlist[i]] = egflist
     return eventpairs
 
+def signal2noise(event,netw,stn,chn,loc,tt):
+    os.chdir("{}/{}".format(dataset_path,event.id))
+
+    filename = glob.glob("{}.{}.{}.{}.*.SAC".format(netw,stn,loc,chn))
+    if (filename == []):
+        return False
+    tr = obspy.read(filename)[0]
+    tr.filter('bandpass',freqmin=event.freqmin,freqmax=event.freqmax,zerophase=True,corners=2)
+    arrivaltime = tr.stats.starttime + event.origintime + tt
+    signal = tr.slice(arrivaltime-event.timebefore, arrivaltime+event.timeafter).data
+    maxsignal = np.max(np.abs(signal))
+    noise = tr.slice(event.origintime/3,event.origintime*2/3).data
+    maxnoise = np.max(np.abs(noise))
+    
+    return maxsignal/maxnoise
+
 def select_stations(event):
-    dataset_path = "/home/meichen/work1/RidgeCrest"
     os.chdir("{}".format(dataset_path))
-    phaseinfo = pd.read_csv("{}.phase".format(event.id),skipinitialspace=True,sep=" ",names=['network','stations','channel','location','phase','signal_onset_quality','pick_quality','traveltime'],usecols[0,1,2,3,7,9,10,12],skiprows=1,dtype={'network':str,'stations':str,'channel':str,'location':str,'phase':str,'signal_onset_quality':str,'pick_quality':np.float64,'traveltime':np.float64})
+    phaseinfo = pd.read_csv("{}.phase".format(event.id),skipinitialspace=True,sep="\s+",names=['network','stations','channel','location','phase','signal_onset_quality','pick_quality','traveltime'],usecols=[0,1,2,3,7,9,10,12],skiprows=1,dtype={'network':str,'stations':str,'channel':str,'location':str,'phase':str,'signal_onset_quality':str,'pick_quality':np.float64,'traveltime':np.float64})
+
+    stationlist_S = []
+    stationlist_P = []
     for i in np.arange(phaseinfo.shape[0]):
-        if
+        if (phaseinfo['channel'][i][1::] == 'HN' and phaseinfo['phase'][i] == 'S'):
+            snr = signal2noise(event,phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['channel'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['traveltime'][i])
+            if (snr != False):
+                stationlist_S.append(Trace(phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['location'][i],snr))
+        elif (phaseinfo['channel'][i][1::] == 'HZ' and phaseinfo['phase'][i] == 'P'):
+            snr = signal2noise(event,phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['channel'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['traveltime'][i])
+            if (snr != False):
+                stationlist_P.append(Trace(phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['location'][i],snr))
+
+    return stationlist_S,stationlist_P            
     
 
 def main():
@@ -74,11 +152,11 @@ def main():
     for i in np.arange(catalog.shape[0]):
         dt = dateTime2datetime(catalog['date'][i],catalog['time'][i])
         event = Event(catalog['eventid'][i],catalog['latitude'][i],catalog['longitude'][i],catalog['depth'][i],catalog['magnitude'][i],dt)
+        event.mag_to_freqtimewin()
         eventlist.append(event)
 
     # sort the list based on magnitude in descending order
     eventlist.sort(key=lambda x: x.mag,reverse=True)
-    print(eventlist)
 
     # find pairs of events
     minmagdiff = 1.0
@@ -86,8 +164,15 @@ def main():
     maxdistdiff = 100 # km
     eventpairs = select_eventpairs(eventlist,minmagdiff,mintimediff,maxdistdiff)
     
-    # select stations for events
+    # compute snr of each station for events
+    global dataset_path
+    dataset_path = "/home/meichen/work1/RidgeCrest"
+    stationdic_S = {}
+    stationdic_P = {}
     for event in eventlist:
-        stationlist = select_stations(event)
+        print(event)
+        stationlist_S, stationlist_P = select_stations(event)
+        stationdic_S[event] = stationlist_S
+        stationdic_P[event] = stationlist_P
 
 main()
