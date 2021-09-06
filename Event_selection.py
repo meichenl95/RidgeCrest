@@ -54,9 +54,10 @@ def common_stations(master,egf,stationdic):
     commonlist = []
     for station in masterlist:
         if station in egflist:
-            tracesnr = Tracesnr(station.netw,station.stn,station.loc)
+            tracesnr = Tracesnr(station.netw,station.stn,station.loc,station.chn)
             index = egflist.index(station)
             tracesnr.set_masteregfsnr(station.snr,egflist[index].snr)
+            tracesnr.set_masteregfarrivaltime(station.arrivaltime,egflist[index].arrivaltime)
             commonlist.append(tracesnr)
     return commonlist
 
@@ -69,15 +70,17 @@ def select_stations(event):
     for i in np.arange(phaseinfo.shape[0]):
         if (phaseinfo['channel'][i][1::] == 'HN' and phaseinfo['phase'][i] == 'S'):
             snr = signal2noise(event,phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['channel'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['traveltime'][i])
-            tr = Trace(phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['location'][i])
+            tr = Trace(phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['channel'][i])
             if (snr != False):
                 tr.set_snr(snr)
+                tr.set_arrivaltime(phaseinfo['traveltime'][i])
                 stationlist_S.append(tr)
         elif (phaseinfo['channel'][i][1::] == 'HZ' and phaseinfo['phase'][i] == 'P'):
             snr = signal2noise(event,phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['channel'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['traveltime'][i])
-            tr = Trace(phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['location'][i])
+            tr = Trace(phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['channel'][i])
             if (snr != False):
                 tr.set_snr(snr)
+                tr.set_arrivaltime(phaseinfo['traveltime'][i])
                 stationlist_P.append(tr)
 
     return stationlist_S,stationlist_P            
@@ -149,5 +152,5 @@ def main():
     with open("eventpairs_with_stations_P.pkl","wb") as f:
         pickle.dump(eventpairs_with_stations_P, f, pickle.HIGHEST_PROTOCOL)
     f.close()
-    print("complete saveing eventpairs with stations")
+    print("complete saving eventpairs with stations")
 main()

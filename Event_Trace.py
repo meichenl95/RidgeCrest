@@ -3,26 +3,35 @@
 import numpy as np
 
 class Tracename:
-    def __init__(self,init_netw,init_stn,init_loc):
+    def __init__(self,init_netw,init_stn,init_loc,init_chn):
         self.netw = init_netw
         self.stn = init_stn
         self.loc = init_loc
+        self.chn = init_chn
     def __str__(self):
-        return "netw: {}, stn: {}, loc: {}".format(self.netw,self.stn,self.loc)
+        return "netw: {}, stn: {}, loc: {}, chn: {}".format(self.netw,self.stn,self.loc,self.chn)
 
 class Trace(Tracename):
     snr = 0;
+    arrivaltime = 0
     def set_snr(self,init_snr):
         self.snr = init_snr
+    def set_arrivaltime(self,init_arrivaltime):
+        self.arrivaltime = init_arrivaltime
     def __eq__(self, trace2):
         return ((self.netw == trace2.netw) and (self.stn == trace2.stn) and (self.loc == trace2.loc))
 
 class Tracesnr(Tracename):
     mastersnr = 0
     egfsnr = 0
+    masterarrivaltime = 0
+    egfarrivaltime = 0
     def set_masteregfsnr(self,master,egf):
         self.mastersnr = master
         self.egfsnr = egf
+    def set_masteregfarrivaltime(self, mastertime,egftime):
+        self.masterarrivaltime = mastertime
+        self.egfarrivaltime = egftime
 
 class Event:
     freqmin = 0
