@@ -78,7 +78,7 @@ class Event:
             self.origintime = 75
         elif (self.mag >= 4 and self.mag < 5):
             self.freqmin = 1
-            self.freqmax = 10
+            self.freqmax = 15
             self.timebefore = 5
             self.timeafter = 25
             self.origintime = 60
