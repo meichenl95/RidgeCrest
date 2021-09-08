@@ -11,9 +11,9 @@ def combine_corner_frequency(filename):
         eventpairs_with_spectralratio = pickle.load(f)
     f.close()
     
-    minmastersnr = 1
-    minegfsnr = 1
-    maxstdmaster = 0.01
+    minmastersnr = 3
+    minegfsnr = 3
+    maxstdmaster = 0.05
     minstnnum = 5
     
     # save to csv
@@ -38,6 +38,7 @@ def combine_corner_frequency(filename):
             stnnum = 0
             fcmaster = 0
             for stn, stninfo in stations.items():
+                #print(stn.mastersnr, stn.egfsnr, stninfo['stdmaster'])
                 if (stn.mastersnr < minmastersnr or stn.egfsnr < minegfsnr):
                     continue
                 elif (stninfo['fcegf'] <= stninfo['fcmaster']):
