@@ -38,6 +38,9 @@ class Event:
     freqmax = 45
     timebefore = 0
     timeafter = 0
+    minmagdiff = 0
+    mintimediff = 0
+    maxdistdiff = 0
     def __init__(self,init_id,init_lat,init_lon,init_dep,init_mag,init_datetime):
         self.id = init_id
         self.lat = init_lat
@@ -70,36 +73,54 @@ class Event:
             self.timebefore = 20
             self.timeafter = 100
             self.origintime = 90
+            self.minmagdiff = 1
+            self.mintimediff = 120
+            self.maxdistdiff = 50
         elif (self.mag >= 5 and self.mag < 6):
             self.freqmin = 0.1
             self.freqmax = 5
             self.timebefore = 10
             self.timeafter = 50
             self.origintime = 75
+            self.minmagdiff = 1
+            self.mintimediff = 60
+            self.maxdistdiff = 20
         elif (self.mag >= 4 and self.mag < 5):
             self.freqmin = 1
             self.freqmax = 15
             self.timebefore = 5
             self.timeafter = 25
             self.origintime = 60
+            self.minmagdiff = 1
+            self.mintimediff = 30
+            self.maxdistdiff = 10
         elif (self.mag >= 3 and self.mag < 4):
             self.freqmin = 2
             self.freqmax = 20
             self.timebefore = 3
             self.timeafter = 12
             self.origintime = 45
+            self.minmagdiff = 1
+            self.mintimediff = 15
+            self.maxdistdiff = 5
         elif (self.mag >= 2 and self.mag < 3):
             self.freqmin = 2
             self.freqmax = 45
             self.timebefore = 2
             self.timeafter = 4
             self.origintime = 30
+            self.minmagdiff = 1
+            self.mintimediff = 6
+            self.maxdistdiff = 2
         else:
             self.freqmin = 5
             self.freqmax = 45
             self.timebefore = 0.5
             self.timeafter = 2.5
             self.origintime = 15
+            self.minmagdiff = 1
+            self.mintimediff = 3
+            self.maxdistdiff = 1
 
     # string representation
     def __str__(self):

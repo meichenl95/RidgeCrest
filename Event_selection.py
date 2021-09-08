@@ -18,7 +18,7 @@ def dateTime2datetime(date,time):
     dt = datetime.datetime(timelist[0],timelist[1],timelist[2],timelist[3],timelist[4],timelist[5],timelist[6])
     return dt
 
-def select_eventpairs(eventlist,minmagdiff,mintimediff,maxdistdiff):
+def select_eventpairs(eventlist):
     eventpairs = {}
     for i in np.arange(len(eventlist)):
         egflist = []
@@ -26,7 +26,7 @@ def select_eventpairs(eventlist,minmagdiff,mintimediff,maxdistdiff):
         for j in np.arange(i + 1,len(eventlist)):
             egfevent = eventlist[j]
             masterevent.time_to(egfevent)
-            if (eventlist[i].time_to(eventlist[j]) >= mintimediff and eventlist[i].mag_to(eventlist[j]) >= minmagdiff and eventlist[i].distance_to(eventlist[j]) <= maxdistdiff):
+            if (eventlist[i].time_to(eventlist[j]) >= eventlist[i].mintimediff and eventlist[i].mag_to(eventlist[j]) >= eventlist[i].minmagdiff and eventlist[i].distance_to(eventlist[j]) <= eventlist[i].maxdistdiff):
                 egflist.append(eventlist[j])
         eventpairs[eventlist[i]] = egflist
     return eventpairs
@@ -42,7 +42,7 @@ def signal2noise(event,netw,stn,chn,loc,tt):
     arrivaltime = tr.stats.starttime + event.origintime + tt
     signal = tr.slice(arrivaltime-event.timebefore, arrivaltime+event.timeafter).data
     maxsignal = np.max(np.abs(signal))
-    noise = tr.slice(event.origintime/3,event.origintime*2/3).data
+    noise = tr.slice(tr.stats.starttime + event.origintime/3,tr.stats.starttime + event.origintime*2/3).data
     maxnoise = np.max(np.abs(noise))
     
     return maxsignal/maxnoise
@@ -101,10 +101,7 @@ def main():
     eventlist.sort(key=lambda x: x.mag,reverse=True)
 
     # find pairs of events
-    minmagdiff = 1.0
-    mintimediff = 10 # seconds
-    maxdistdiff = 100 # km
-    eventpairs = select_eventpairs(eventlist,minmagdiff,mintimediff,maxdistdiff)
+    eventpairs = select_eventpairs(eventlist)
     
     with open("eventpairs.pkl","wb") as f:
         pickle.dump(eventpairs, f, pickle.HIGHEST_PROTOCOL)

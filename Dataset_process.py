@@ -22,7 +22,7 @@ def mseed2sac(eventid,evla,evlo,evdp):
     subprocess.call(['mseed2sac {}/{}/*.?H[NEZ].*ms -m {}.station.txt -E "2019,,/{}/{}/{}"'.format(dataset_path,eventid,eventid,evla,evlo,evdp)],shell=True)
 
 def main():
-    catalog = np.genfromtxt("catalog_test.txt",skip_header=28,usecols=(0,4,5,6),)
+    catalog = np.genfromtxt("catalog_Trugman.txt",skip_header=28,usecols=(0,4,5,6),)
     eventid = catalog[:,0]
     evlo = catalog[:,1]
     evla = catalog[:,2]

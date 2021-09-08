@@ -83,7 +83,7 @@ def fit_spectrum(master, egf, stn):
         spec = spec + masterspec / egfspec
     spec = spec / winnum
 
-    meanmomentratio, meanfcegf, meanfcmaster, stdfcmaster = bootstrapfit(masterfreq,spec,100)
+    meanmomentratio, meanfcegf, meanfcmaster, stdfcmaster = bootstrapfit(masterfreq,spec,50)
 #    print(master.id,master.mag, egf.id,egf.mag,meanmomentratio,meanfcegf,meanfcmaster,stdfcmaster)
 
     return meanmomentratio, meanfcegf, meanfcmaster, stdfcmaster
