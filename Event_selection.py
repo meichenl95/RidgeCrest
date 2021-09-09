@@ -1,6 +1,7 @@
 #!/home/meichen/anaconda3/bin/python3
 
 import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 import pickle
 import os
@@ -31,12 +32,12 @@ def select_eventpairs(eventlist):
         eventpairs[eventlist[i]] = egflist
     return eventpairs
 
-def signal2noise(event,netw,stn,chn,loc,tt):
+def signal2noise_and_gcarc(event,netw,stn,chn,loc,tt):
     os.chdir("{}/{}".format(dataset_path,event.id))
 
     filename = glob.glob("{}.{}.{}.{}.*.SAC".format(netw,stn,loc,chn))
     if (filename == []):
-        return False
+        return False,False
     tr = obspy.read(filename[0])[0]
     tr.filter('bandpass',freqmin=event.freqmin,freqmax=event.freqmax,zerophase=True,corners=2)
     arrivaltime = tr.stats.starttime + event.origintime + tt
@@ -44,8 +45,18 @@ def signal2noise(event,netw,stn,chn,loc,tt):
     maxsignal = np.max(np.abs(signal))
     noise = tr.slice(tr.stats.starttime + event.origintime/3,tr.stats.starttime + event.origintime*2/3).data
     maxnoise = np.max(np.abs(noise))
+
+    fig,ax = plt.subplots(2,1,figsize=[5,8])
+    ax[0].plot(signal)
+    ax[0].plot(noise)
+    ax[0].plot(tr.data)
+    ax[0].set_title(chn)
+    ax[1].loglog(np.fft.rfftfreq(len(signal),d=tr.stats.delta),np.abs(np.fft.rfft(signal)))
+    ax[1].loglog(np.fft.rfftfreq(len(noise),d=tr.stats.delta),np.abs(np.fft.rfft(noise)))
+    plt.show()
+    plt.close()
     
-    return maxsignal/maxnoise
+    return maxsignal/maxnoise, tr.stats.sac['gcarc']
 
 def common_stations(master,egf,stationdic):
     masterlist = stationdic.get(master)
@@ -58,6 +69,7 @@ def common_stations(master,egf,stationdic):
             index = egflist.index(station)
             tracesnr.set_masteregfsnr(station.snr,egflist[index].snr)
             tracesnr.set_masteregfarrivaltime(station.arrivaltime,egflist[index].arrivaltime)
+            tracesnr.set_masteregfgcarc(station.gcarc,egflist[index].gcarc)
             commonlist.append(tracesnr)
     return commonlist
 
@@ -68,19 +80,23 @@ def select_stations(event):
     stationlist_S = []
     stationlist_P = []
     for i in np.arange(phaseinfo.shape[0]):
-        if (phaseinfo['channel'][i][1::] == 'HN' and phaseinfo['phase'][i] == 'S'):
-            snr = signal2noise(event,phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['channel'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['traveltime'][i])
+        if ((phaseinfo['channel'][i][1::] == 'HN' or phaseinfo['channel'][i][1::] == 'HE') and phaseinfo['phase'][i] == 'S'):
+            snr, gcarc = signal2noise_and_gcarc(event,phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['channel'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['traveltime'][i])
             tr = Trace(phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['channel'][i])
             if (snr != False):
                 tr.set_snr(snr)
                 tr.set_arrivaltime(phaseinfo['traveltime'][i])
+                tr.set_gcarc(gcarc)
+                print(event.id,tr.netw, tr.stn, tr.chn, tr.snr, tr.gcarc)
                 stationlist_S.append(tr)
         elif (phaseinfo['channel'][i][1::] == 'HZ' and phaseinfo['phase'][i] == 'P'):
-            snr = signal2noise(event,phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['channel'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['traveltime'][i])
+            snr, gcarc = signal2noise_and_gcarc(event,phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['channel'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['traveltime'][i])
             tr = Trace(phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['channel'][i])
             if (snr != False):
                 tr.set_snr(snr)
                 tr.set_arrivaltime(phaseinfo['traveltime'][i])
+                tr.set_gcarc(gcarc)
+                print(event.id,tr.netw, tr.stn, tr.chn, tr.snr, tr.gcarc)
                 stationlist_P.append(tr)
 
     return stationlist_S,stationlist_P            

@@ -13,8 +13,9 @@ def combine_corner_frequency(filename):
     
     minmastersnr = 3
     minegfsnr = 3
-    maxstdmaster = 0.05
-    minstnnum = 5
+    maxstdmaster = 1
+    minstngcarc = 0.2
+    minstnnum = 0
     
     # save to csv
     dataframedic = {}
@@ -38,12 +39,14 @@ def combine_corner_frequency(filename):
             stnnum = 0
             fcmaster = 0
             for stn, stninfo in stations.items():
-                #print(stn.mastersnr, stn.egfsnr, stninfo['stdmaster'])
+                print(stn.netw, stn.stn, stn.chn,  stninfo['stdmaster'], stn.mastersnr, stn.egfsnr)
                 if (stn.mastersnr < minmastersnr or stn.egfsnr < minegfsnr):
                     continue
                 elif (stninfo['fcegf'] <= stninfo['fcmaster']):
                     continue
                 elif (stninfo['stdmaster'] > maxstdmaster):
+                    continue
+                elif (stn.mastergcarc < minstngcarc or stn.egfgcarc < minstngcarc):
                     continue
                 else:
                     fcmaster += stninfo['fcmaster']
@@ -85,6 +88,14 @@ def combine_corner_frequency(filename):
     df = pd.DataFrame.from_dict(uniqdataframedic)
     print(df)
     df.to_csv("{}_uniqmaster.csv".format(filename.replace('.','_').split('_')[-2]))
+
+    plt.scatter(list_uniq_mastermag,list_uniq_fc)
+    plt.yscale('log')
+    plt.xlabel("Magnitude")
+    plt.ylabel("Corner frequency")
+    plt.title(filename.replace('.','_').split('_')[-2])
+    plt.savefig("{}_uniqmaster.pdf".format(filename.replace('.','_').split('_')[-2]))
+    plt.close()
 
 def main():
     combine_corner_frequency("eventpairs_with_spectralratio_S.pkl")

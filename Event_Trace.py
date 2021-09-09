@@ -14,24 +14,32 @@ class Tracename:
 class Trace(Tracename):
     snr = 0;
     arrivaltime = 0
+    gcarc = 0
     def set_snr(self,init_snr):
         self.snr = init_snr
     def set_arrivaltime(self,init_arrivaltime):
         self.arrivaltime = init_arrivaltime
+    def set_gcarc(self, init_gcarc):
+        self.gcarc = init_gcarc
     def __eq__(self, trace2):
-        return ((self.netw == trace2.netw) and (self.stn == trace2.stn) and (self.loc == trace2.loc))
+        return ((self.netw == trace2.netw) and (self.stn == trace2.stn) and (self.loc == trace2.loc) and (self.chn == self.chn))
 
 class Tracesnr(Tracename):
     mastersnr = 0
     egfsnr = 0
     masterarrivaltime = 0
     egfarrivaltime = 0
+    mastergcarc = 0
+    egfgcarc = 0
     def set_masteregfsnr(self,master,egf):
         self.mastersnr = master
         self.egfsnr = egf
     def set_masteregfarrivaltime(self, mastertime,egftime):
         self.masterarrivaltime = mastertime
         self.egfarrivaltime = egftime
+    def set_masteregfgcarc(self,mastergcarc,egfgcarc):
+        self.mastergcarc = mastergcarc
+        self.egfgcarc = egfgcarc
 
 class Event:
     freqmin = 0
@@ -95,23 +103,23 @@ class Event:
             self.mintimediff = 30
             self.maxdistdiff = 10
         elif (self.mag >= 3 and self.mag < 4):
-            self.freqmin = 2
+            self.freqmin = 1
             self.freqmax = 20
-            self.timebefore = 3
-            self.timeafter = 12
+            self.timebefore = 0.5
+            self.timeafter = 2.5
             self.origintime = 45
-            self.minmagdiff = 1
-            self.mintimediff = 15
-            self.maxdistdiff = 5
+            self.minmagdiff = 0.5
+            self.mintimediff = 5
+            self.maxdistdiff = 1
         elif (self.mag >= 2 and self.mag < 3):
-            self.freqmin = 2
+            self.freqmin = 1/120.
             self.freqmax = 45
-            self.timebefore = 2
-            self.timeafter = 4
+            self.timebefore = 0.2
+            self.timeafter = 0.8
             self.origintime = 30
-            self.minmagdiff = 1
-            self.mintimediff = 6
-            self.maxdistdiff = 2
+            self.minmagdiff = 0.5
+            self.mintimediff = 3
+            self.maxdistdiff = 0.5
         else:
             self.freqmin = 5
             self.freqmax = 45
