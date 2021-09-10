@@ -55,7 +55,6 @@ def func(x,a,b,c):
 def bootstrapfit(freq,spec,iternum):
     spec = np.log10(spec)
     poptlist = []
-    popt, pcov = curve_fit(func, freq, spec, bounds=([0,0.0001,0.0001],[    1e5,1000,1000]),method='trf',loss='huber',f_scale=0.1)
     try:
         popt, pcov = curve_fit(func, freq, spec, bounds=([0,0.0001,0.0001],[    1e5,1000,1000]),method='trf',loss='huber',f_scale=0.1)
         res = spec - func(freq, *popt)
@@ -83,13 +82,13 @@ def combine_corner_frequency(filename):
         eventpairs_with_spectralratio = pickle.load(f)
     f.close()
     
-    minmastersnr = 2
-    minegfsnr = 2
+    minmastersnr = 3
+    minegfsnr = 3
     maxstdmaster = 0.1
     minstngcarc = 0.1
     minstnnum = 5
     iternum = 50
-    smoothfactor = 5
+    smoothfactor = 11
     
     # save to csv
     dataframedic = {}
@@ -131,7 +130,7 @@ def combine_corner_frequency(filename):
                 speclog = np.array([speclog[i]/countsum[i] if countsum[i]>0 else 0 for i in np.arange(speclog.shape[0])])
                 freq = 10**freqlog[countsum>0]
                 spec = 10**speclog[countsum>0]
-                momentratio, fcegf, fcmaster, stdfcmaster = bootstrapfit(freq, spec, iternum)
+                momentratio, fcegf, fcmaster, stdfcmaster = bootstrapfit(freq,spec,iternum)
                 if (stdfcmaster < maxstdmaster and fcegf > fcmaster):
                     masterid.append(master.id)
                     mastermag.append(master.mag)

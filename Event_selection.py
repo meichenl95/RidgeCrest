@@ -43,13 +43,14 @@ def signal2noise_and_gcarc(event,netw,stn,chn,loc,tt):
 
     # frequency range 1
     tr_snr1 = tr.copy()
+    print(event.id,netw,stn,loc,chn)
     tr_snr1.filter('bandpass',freqmin=event.freqsnr1low,freqmax=event.freqsnr1high,zerophase=True,corners=2)
     arrivaltime = tr_snr1.stats.starttime + event.origintime + tt
     signal = tr_snr1.slice(arrivaltime-event.timebefore, arrivaltime+event.timeafter).data
-    maxsignal1 = np.max(np.abs(signal))
     noise = tr_snr1.slice(arrivaltime - tt - 2*(event.timebefore + event.timeafter), arrivaltime - tt - (event.timebefore + event.timeafter)).data
-    print(event.id,netw,stn,loc,chn)
-    print(noise)
+    if (signal.size == 0  or noise.size == 0):
+        return False, False, False
+    maxsignal1 = np.max(np.abs(signal))
     maxnoise1 = np.max(np.abs(noise))
 
 #    fig,ax = plt.subplots(2,1,figsize=[5,8])
@@ -66,8 +67,10 @@ def signal2noise_and_gcarc(event,netw,stn,chn,loc,tt):
     tr_snr2.filter('bandpass',freqmin=event.freqsnr2low,freqmax=event.freqsnr2high,zerophase=True,corners=2)
     arrivaltime = tr_snr2.stats.starttime + event.origintime + tt
     signal = tr_snr2.slice(arrivaltime-event.timebefore, arrivaltime+event.timeafter).data
-    maxsignal2 = np.max(np.abs(signal))
     noise = tr_snr2.slice(arrivaltime - tt - 2*(event.timebefore+event.timeafter), arrivaltime - tt - (event.timebefore+event.timeafter)).data
+    if (signal.size == 0 or noise.size == 0):
+        return False,False,False
+    maxsignal2 = np.max(np.abs(signal))
     maxnoise2 = np.max(np.abs(noise))
 
 #    fig,ax = plt.subplots(2,1,figsize=[5,8])
@@ -132,7 +135,8 @@ def main():
         dt = dateTime2datetime(catalog['date'][i],catalog['time'][i])
         event = Event(catalog['eventid'][i],catalog['latitude'][i],catalog['longitude'][i],catalog['depth'][i],catalog['magnitude'][i],dt)
         event.mag_to_freqtimewin()
-        eventlist.append(event)
+        if (event.mag >= 2 and event.mag < 3.5):
+            eventlist.append(event)
 
     # sort the list based on magnitude in descending order
     eventlist.sort(key=lambda x: x.mag,reverse=True)
