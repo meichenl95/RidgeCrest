@@ -12,11 +12,13 @@ class Tracename:
         return "netw: {}, stn: {}, loc: {}, chn: {}".format(self.netw,self.stn,self.loc,self.chn)
 
 class Trace(Tracename):
-    snr = 0;
+    snr1 = 0;
+    snr2 = 0;
     arrivaltime = 0
     gcarc = 0
-    def set_snr(self,init_snr):
-        self.snr = init_snr
+    def set_snr(self,init_snr1,init_snr2):
+        self.snr1 = init_snr1
+        self.snr2 = init_snr2
     def set_arrivaltime(self,init_arrivaltime):
         self.arrivaltime = init_arrivaltime
     def set_gcarc(self, init_gcarc):
@@ -25,15 +27,19 @@ class Trace(Tracename):
         return ((self.netw == trace2.netw) and (self.stn == trace2.stn) and (self.loc == trace2.loc) and (self.chn == self.chn))
 
 class Tracesnr(Tracename):
-    mastersnr = 0
-    egfsnr = 0
+    mastersnr1 = 0
+    mastersnr2 = 0
+    egfsnr1 = 0
+    egfsnr2 = 0
     masterarrivaltime = 0
     egfarrivaltime = 0
     mastergcarc = 0
     egfgcarc = 0
-    def set_masteregfsnr(self,master,egf):
-        self.mastersnr = master
-        self.egfsnr = egf
+    def set_masteregfsnr(self,mastersnr1,mastersnr2,egfsnr1,egfsnr2):
+        self.mastersnr1 = mastersnr1
+        self.mastersnr2 = mastersnr2
+        self.egfsnr1 = egfsnr1
+        self.egfsnr2 = egfsnr2
     def set_masteregfarrivaltime(self, mastertime,egftime):
         self.masterarrivaltime = mastertime
         self.egfarrivaltime = egftime
@@ -49,6 +55,11 @@ class Event:
     minmagdiff = 0
     mintimediff = 0
     maxdistdiff = 0
+    freqsnr1low = 1
+    freqsnr1high = 10
+    freqsnr2low = 1
+    freqsnr2high = 10
+    
     def __init__(self,init_id,init_lat,init_lon,init_dep,init_mag,init_datetime):
         self.id = init_id
         self.lat = init_lat
@@ -102,7 +113,7 @@ class Event:
             self.minmagdiff = 1
             self.mintimediff = 30
             self.maxdistdiff = 10
-        elif (self.mag >= 3 and self.mag < 4):
+        elif (self.mag >= 3.5 and self.mag < 4):
             self.freqmin = 1
             self.freqmax = 20
             self.timebefore = 0.5
@@ -111,15 +122,32 @@ class Event:
             self.minmagdiff = 0.5
             self.mintimediff = 5
             self.maxdistdiff = 1
+        elif (self.mag >= 3 and self.mag < 3.5):
+            self.freqmin = 1
+            self.freqmax = 35
+            self.timebefore = 0
+            self.timeafter = 1.0
+            self.origintime = 45
+            self.minmagdiff = 0.5
+            self.mintimediff = 5
+            self.maxdistdiff = 0.5
+            self.freqsnr1low = 1
+            self.freqsnr1high = 10
+            self.freqsnr2low = 10
+            self.freqsnr2high = 20
         elif (self.mag >= 2 and self.mag < 3):
-            self.freqmin = 1/120.
-            self.freqmax = 45
-            self.timebefore = 0.2
-            self.timeafter = 0.8
+            self.freqmin = 1
+            self.freqmax = 35
+            self.timebefore = 0
+            self.timeafter = 0.5
             self.origintime = 30
             self.minmagdiff = 0.5
             self.mintimediff = 3
-            self.maxdistdiff = 0.5
+            self.maxdistdiff = 0.2
+            self.freqsnr1low = 2
+            self.freqsnr1high = 20
+            self.freqsnr2low = 20
+            self.freqsnr2high = 35
         else:
             self.freqmin = 5
             self.freqmax = 45

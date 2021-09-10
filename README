@@ -1,3 +1,16 @@
-Dataset_process.py:
-1. Convert miniseed files to SAC files
-2. Add station info and event info
+I. Dataset_process.py:
+    1. Convert miniseed files to SAC files
+    2. Add station info and event info
+
+II. Event_selection.py:
+    1. Select eventpairs (master and its egfs), save to "eventpairs.pkl"
+    2. Compute signal-to-noise ratio of each stations for events, save to "stationdic_S.pkl" for S wave and to "stationdic_P.pkl" for P wave.
+    3. Find common stations for each eventpair, save to "eventpairs_with_stations_S.pkl" for S wave and to "eventpairs_with_stations_P.pkl" for P wave.
+
+III. Spectral_ratio.py
+    1. Compute spectral ratio for each common station for a eventpair, save to "eventpairs_with_spectralratio_S.pkl" for S wave and to "eventpairs_with_spectralratio_P.pkl" for P wave.
+
+IV. corner_frequency.py
+    1. Select common stations according to the signal-to-noise ratio and the stantion-event distance criteria, and compute the average spectral ratio
+    2. Select egf according to the station number and the bootstrapping standard deviation criteria, fit to the Brune source model. Save to "S_separateegf.csv" for S wave and to "P_separateegf.csv" for P wave
+    3. Compute the average corner frequency based on selected egfs. Save to "S_uniqmaster.csv" for S wave and to "P_uniqmaster.csv" for P wave.

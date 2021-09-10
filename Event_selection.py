@@ -24,11 +24,12 @@ def select_eventpairs(eventlist):
     for i in np.arange(len(eventlist)):
         egflist = []
         masterevent = eventlist[i]
+        if (masterevent.mag > 3.5 or masterevent.mag < 3):
+            continue
         for j in np.arange(i + 1,len(eventlist)):
             egfevent = eventlist[j]
-            masterevent.time_to(egfevent)
-            if (eventlist[i].time_to(eventlist[j]) >= eventlist[i].mintimediff and eventlist[i].mag_to(eventlist[j]) >= eventlist[i].minmagdiff and eventlist[i].distance_to(eventlist[j]) <= eventlist[i].maxdistdiff):
-                egflist.append(eventlist[j])
+            if (masterevent.time_to(egfevent) >= masterevent.mintimediff and masterevent.mag_to(egfevent) >= masterevent.minmagdiff and masterevent.distance_to(egfevent) <= masterevent.maxdistdiff and egfevent.mag < 3 and egfevent.mag > 2):
+                egflist.append(egfevent)
         eventpairs[eventlist[i]] = egflist
     return eventpairs
 
@@ -37,26 +38,48 @@ def signal2noise_and_gcarc(event,netw,stn,chn,loc,tt):
 
     filename = glob.glob("{}.{}.{}.{}.*.SAC".format(netw,stn,loc,chn))
     if (filename == []):
-        return False,False
+        return False,False,False
     tr = obspy.read(filename[0])[0]
-    tr.filter('bandpass',freqmin=event.freqmin,freqmax=event.freqmax,zerophase=True,corners=2)
-    arrivaltime = tr.stats.starttime + event.origintime + tt
-    signal = tr.slice(arrivaltime-event.timebefore, arrivaltime+event.timeafter).data
-    maxsignal = np.max(np.abs(signal))
-    noise = tr.slice(tr.stats.starttime + event.origintime/3,tr.stats.starttime + event.origintime*2/3).data
-    maxnoise = np.max(np.abs(noise))
 
-    fig,ax = plt.subplots(2,1,figsize=[5,8])
-    ax[0].plot(signal)
-    ax[0].plot(noise)
-    ax[0].plot(tr.data)
-    ax[0].set_title(chn)
-    ax[1].loglog(np.fft.rfftfreq(len(signal),d=tr.stats.delta),np.abs(np.fft.rfft(signal)))
-    ax[1].loglog(np.fft.rfftfreq(len(noise),d=tr.stats.delta),np.abs(np.fft.rfft(noise)))
-    plt.show()
-    plt.close()
+    # frequency range 1
+    tr_snr1 = tr.copy()
+    tr_snr1.filter('bandpass',freqmin=event.freqsnr1low,freqmax=event.freqsnr1high,zerophase=True,corners=2)
+    arrivaltime = tr_snr1.stats.starttime + event.origintime + tt
+    signal = tr_snr1.slice(arrivaltime-event.timebefore, arrivaltime+event.timeafter).data
+    maxsignal1 = np.max(np.abs(signal))
+    noise = tr_snr1.slice(arrivaltime - tt - 2*(event.timebefore + event.timeafter), arrivaltime - tt - (event.timebefore + event.timeafter)).data
+    print(event.id,netw,stn,loc,chn)
+    print(noise)
+    maxnoise1 = np.max(np.abs(noise))
+
+#    fig,ax = plt.subplots(2,1,figsize=[5,8])
+#    ax[0].plot(signal)
+#    ax[0].plot(noise)
+#    ax[0].set_title(chn)
+#    ax[1].loglog(np.fft.rfftfreq(len(signal),d=tr.stats.delta),np.abs(np.fft.rfft(signal)))
+#    ax[1].loglog(np.fft.rfftfreq(len(noise),d=tr.stats.delta),np.abs(np.fft.rfft(noise)))
+#    plt.show()
+#    plt.close()
+
+    # frequency range 2
+    tr_snr2 = tr.copy()
+    tr_snr2.filter('bandpass',freqmin=event.freqsnr2low,freqmax=event.freqsnr2high,zerophase=True,corners=2)
+    arrivaltime = tr_snr2.stats.starttime + event.origintime + tt
+    signal = tr_snr2.slice(arrivaltime-event.timebefore, arrivaltime+event.timeafter).data
+    maxsignal2 = np.max(np.abs(signal))
+    noise = tr_snr2.slice(arrivaltime - tt - 2*(event.timebefore+event.timeafter), arrivaltime - tt - (event.timebefore+event.timeafter)).data
+    maxnoise2 = np.max(np.abs(noise))
+
+#    fig,ax = plt.subplots(2,1,figsize=[5,8])
+#    ax[0].plot(signal)
+#    ax[0].plot(noise)
+#    ax[0].set_title(chn)
+#    ax[1].loglog(np.fft.rfftfreq(len(signal),d=tr.stats.delta),np.abs(np.fft.rfft(signal)))
+#    ax[1].loglog(np.fft.rfftfreq(len(noise),d=tr.stats.delta),np.abs(np.fft.rfft(noise)))
+#    plt.show()
+#    plt.close()
     
-    return maxsignal/maxnoise, tr.stats.sac['gcarc']
+    return maxsignal1/maxnoise1, maxsignal2/maxnoise2, tr.stats.sac['gcarc']
 
 def common_stations(master,egf,stationdic):
     masterlist = stationdic.get(master)
@@ -67,7 +90,7 @@ def common_stations(master,egf,stationdic):
         if station in egflist:
             tracesnr = Tracesnr(station.netw,station.stn,station.loc,station.chn)
             index = egflist.index(station)
-            tracesnr.set_masteregfsnr(station.snr,egflist[index].snr)
+            tracesnr.set_masteregfsnr(station.snr1,station.snr2,egflist[index].snr1,egflist[index].snr2)
             tracesnr.set_masteregfarrivaltime(station.arrivaltime,egflist[index].arrivaltime)
             tracesnr.set_masteregfgcarc(station.gcarc,egflist[index].gcarc)
             commonlist.append(tracesnr)
@@ -81,29 +104,27 @@ def select_stations(event):
     stationlist_P = []
     for i in np.arange(phaseinfo.shape[0]):
         if ((phaseinfo['channel'][i][1::] == 'HN' or phaseinfo['channel'][i][1::] == 'HE') and phaseinfo['phase'][i] == 'S'):
-            snr, gcarc = signal2noise_and_gcarc(event,phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['channel'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['traveltime'][i])
+            snr1, snr2, gcarc = signal2noise_and_gcarc(event,phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['channel'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['traveltime'][i])
             tr = Trace(phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['channel'][i])
-            if (snr != False):
-                tr.set_snr(snr)
+            if (snr1 != False and snr2 != False):
+                tr.set_snr(snr1,snr2)
                 tr.set_arrivaltime(phaseinfo['traveltime'][i])
                 tr.set_gcarc(gcarc)
-                print(event.id,tr.netw, tr.stn, tr.chn, tr.snr, tr.gcarc)
                 stationlist_S.append(tr)
         elif (phaseinfo['channel'][i][1::] == 'HZ' and phaseinfo['phase'][i] == 'P'):
-            snr, gcarc = signal2noise_and_gcarc(event,phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['channel'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['traveltime'][i])
+            snr1, snr2, gcarc = signal2noise_and_gcarc(event,phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['channel'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['traveltime'][i])
             tr = Trace(phaseinfo['network'][i],phaseinfo['stations'][i],phaseinfo['location'][i].replace("-",""),phaseinfo['channel'][i])
-            if (snr != False):
-                tr.set_snr(snr)
+            if (snr1 != False and snr2 != False):
+                tr.set_snr(snr1,snr2)
                 tr.set_arrivaltime(phaseinfo['traveltime'][i])
                 tr.set_gcarc(gcarc)
-                print(event.id,tr.netw, tr.stn, tr.chn, tr.snr, tr.gcarc)
                 stationlist_P.append(tr)
 
     return stationlist_S,stationlist_P            
     
 
 def main():
-    catalog = pd.read_csv("catalog_test.txt",skipinitialspace=True,sep=" ",names=['eventid','date','time','magnitude','longitude','latitude','depth'],usecols=[0,1,2,3,4,5,6],skiprows=28,dtype={'eventid':str,'date':str,'time':str,'magnitude':np.float64,'longitude':np.float64,'latitude':np.float64,'depth':np.float64})
+    catalog = pd.read_csv("catalog_Trugman.txt",skipinitialspace=True,sep=" ",names=['eventid','date','time','magnitude','longitude','latitude','depth'],usecols=[0,1,2,3,4,5,6],skiprows=28,dtype={'eventid':str,'date':str,'time':str,'magnitude':np.float64,'longitude':np.float64,'latitude':np.float64,'depth':np.float64})
     
     # make a list of class event
     eventlist = []

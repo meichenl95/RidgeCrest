@@ -14,8 +14,10 @@ from scipy.optimize import curve_fit
 def spectrum(data,delta):
     data = data * tukey(len(data), alpha=0.1)
     nfft = int(2**np.ceil(np.log2(10 * len(data))))
-    spec, freq = mtspec(data=data,delta=delta,time_bandwidth=3.5,number_of_tapers=5,nfft=nfft)
-    spec = np.sqrt(spec)
+    # whether to use mtspec?
+#    spec, freq = mtspec(data=data,delta=delta,time_bandwidth=1.0,number_of_tapers=1,nfft=nfft)
+    spec = np.abs(np.fft.rfft(data, n=nfft))
+    freq = np.fft.rfftfreq(nfft,d=delta)
     return freq, spec
 
 def commonfreq(master, egf, masterfreq, egffreq):
@@ -66,16 +68,15 @@ def fit_spectrum(master, egf, stn):
     egftr.detrend('demean')
 
     winnum = 5
-    pointnum = 800
     masterarrivaltime = mastertr.stats.starttime + master.origintime + stn.masterarrivaltime
     masterwindowlen = (master.timeafter + master.timebefore) / winnum
     egfarrivaltime = egftr.stats.starttime + egf.origintime + stn.egfarrivaltime
     egfwindowlen = (egf.timeafter + egf.timebefore) / winnum
     spec = np.zeros(pointnum)
     for i in np.arange(winnum):
-        masterdata = mastertr.slice(masterarrivaltime - master.timebefore + masterwindowlen / 2 * i, masterarrivaltime - master.timebefore + masterwindowlen / 2 * (i + 2)).data
+        masterdata = mastertr.slice(masterarrivaltime - master.timebefore + masterwindowlen / 2.0 * i, masterarrivaltime - master.timebefore + masterwindowlen / 2.0 * (i + 2)).data
         masterfreq, masterspec = spectrum(masterdata,mastertr.stats.delta)
-        egfdata = egftr.slice(egfarrivaltime - egf.timebefore + egfwindowlen / 2 * i, egfarrivaltime - egf.timebefore + egfwindowlen / 2 * (i + 2)).data
+        egfdata = egftr.slice(egfarrivaltime - egf.timebefore + egfwindowlen / 2.0 * i, egfarrivaltime - egf.timebefore + egfwindowlen / 2.0 * (i + 2)).data
         egffreq, egfspec = spectrum(egfdata,egftr.stats.delta)
         commonfreqmin, commonfreqmax = commonfreq(master, egf, masterfreq,egffreq)
         egffreq, egfspec = resample(egffreq,egfspec,pointnum, commonfreqmin, commonfreqmax)
@@ -86,11 +87,12 @@ def fit_spectrum(master, egf, stn):
     meanmomentratio, meanfcegf, meanfcmaster, stdfcmaster = bootstrapfit(masterfreq,spec,5)
 #    print(master.id,master.mag, egf.id,egf.mag,meanmomentratio,meanfcegf,meanfcmaster,stdfcmaster)
 
-    return meanmomentratio, meanfcegf, meanfcmaster, stdfcmaster
+    return spec, commonfreqmin, commonfreqmax
 
 
 def pairs_spectralratio(filename):
-    global dataset_path
+    global dataset_path, pointnum
+    pointnum = 800
     dataset_path = "/home/meichen/work1/RidgeCrest"
     current_path = "/home/meichen/Research/RidgeCrest"
 
@@ -104,9 +106,9 @@ def pairs_spectralratio(filename):
         for egf, stations in egf_stations.items():
             egfdic = {}
             for stn in stations:
-                momentratio, fcegf, fcmaster, stdmaster = fit_spectrum(master, egf, stn)
-                if (fcmaster):
-                    egfdic[stn] = {"momentratio": momentratio, "fcegf": fcegf, "fcmaster": fcmaster, "stdmaster": stdmaster}
+                spec_ratio, commonfreqmin, commonfreqmax = fit_spectrum(master, egf, stn)
+                print(master.id,egf.id)
+                egfdic[stn] = {"spectral_ratio": spec_ratio,"common_freq_min": commonfreqmin, "common_freq_max": commonfreqmax}
             masterdic[egf] = egfdic
         pairs_with_spectralratio[master] = masterdic
 
