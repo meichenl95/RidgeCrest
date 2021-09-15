@@ -28,7 +28,7 @@ def select_eventpairs(eventlist):
             continue
         for j in np.arange(i + 1,len(eventlist)):
             egfevent = eventlist[j]
-            if (masterevent.time_to(egfevent) >= masterevent.mintimediff and masterevent.mag_to(egfevent) >= masterevent.minmagdiff and masterevent.distance_to(egfevent) <= masterevent.maxdistdiff and egfevent.mag < 3 and egfevent.mag > 2):
+            if (masterevent.time_to(egfevent) >= masterevent.mintimediff and masterevent.mag_to(egfevent) >= masterevent.minmagdiff and masterevent.mag_to(egfevent) <= masterevent.maxmagdiff and masterevent.distance_to(egfevent) <= masterevent.maxdistdiff):
                 egflist.append(egfevent)
         eventpairs[eventlist[i]] = egflist
     return eventpairs

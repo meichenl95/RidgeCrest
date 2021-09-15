@@ -84,7 +84,7 @@ def combine_corner_frequency(filename):
     
     minmastersnr = 3
     minegfsnr = 3
-    maxstdmaster = 0.1
+    maxstdmaster = 0.03
     minstngcarc = 0.1
     minstnnum = 5
     iternum = 50
@@ -131,6 +131,17 @@ def combine_corner_frequency(filename):
                 freq = 10**freqlog[countsum>0]
                 spec = 10**speclog[countsum>0]
                 momentratio, fcegf, fcmaster, stdfcmaster = bootstrapfit(freq,spec,iternum)
+                fig, ax = plt.subplots(1,1,figsize=[6,3])
+                ax.plot(freq,spec,lw=1,c='k')
+                ax.plot(freq,10**func(freq,momentratio,fcegf,fcmaster),lw=2,c='grey',ls='--')
+                ax.set_xscale('log')
+                ax.set_yscale('log')
+                ax.set_xlabel('Frequency (Hz)')
+                ax.set_ylabel('Spectral ratio')
+                ax.set_title("fcm = {:5.3f}, std= {:5.3f}, magdiff = {:3.1f}".format(fcmaster,stdfcmaster,master.mag-egf.mag))
+                fig.tight_layout()
+                plt.savefig("figures/{}_{}.png".format(master.id,egf.id))
+                plt.close()
                 if (stdfcmaster < maxstdmaster and fcegf > fcmaster):
                     masterid.append(master.id)
                     mastermag.append(master.mag)

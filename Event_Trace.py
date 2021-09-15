@@ -53,6 +53,7 @@ class Event:
     timebefore = 0
     timeafter = 0
     minmagdiff = 0
+    maxmagdiff = 0
     mintimediff = 0
     maxdistdiff = 0
     freqsnr1low = 1
@@ -93,6 +94,7 @@ class Event:
             self.timeafter = 100
             self.origintime = 90
             self.minmagdiff = 1
+            self.maxmagdiff = 2
             self.mintimediff = 120
             self.maxdistdiff = 50
         elif (self.mag >= 5 and self.mag < 6):
@@ -102,6 +104,7 @@ class Event:
             self.timeafter = 50
             self.origintime = 75
             self.minmagdiff = 1
+            self.maxmagdiff = 2
             self.mintimediff = 60
             self.maxdistdiff = 20
         elif (self.mag >= 4 and self.mag < 5):
@@ -111,6 +114,7 @@ class Event:
             self.timeafter = 25
             self.origintime = 60
             self.minmagdiff = 1
+            self.maxmagdiff = 2
             self.mintimediff = 30
             self.maxdistdiff = 10
         elif (self.mag >= 3.5 and self.mag < 4):
@@ -120,6 +124,7 @@ class Event:
             self.timeafter = 2.5
             self.origintime = 45
             self.minmagdiff = 0.5
+            self.maxmagdiff = 1.5
             self.mintimediff = 5
             self.maxdistdiff = 1
         elif (self.mag >= 3 and self.mag < 3.5):
@@ -129,6 +134,7 @@ class Event:
             self.timeafter = 1.0
             self.origintime = 45
             self.minmagdiff = 0.5
+            self.maxmagdiff = 1.5
             self.mintimediff = 5
             self.maxdistdiff = 0.5
             self.freqsnr1low = 1
@@ -142,6 +148,7 @@ class Event:
             self.timeafter = 0.5
             self.origintime = 30
             self.minmagdiff = 0.5
+            self.maxmagdiff = 1.5
             self.mintimediff = 3
             self.maxdistdiff = 0.2
             self.freqsnr1low = 2
@@ -155,8 +162,13 @@ class Event:
             self.timeafter = 2.5
             self.origintime = 15
             self.minmagdiff = 1
+            self.maxmagdiff = 1.5
             self.mintimediff = 3
             self.maxdistdiff = 1
+            self.freqsnr1low = 2
+            self.freqsnr1high = 20
+            self.freqsnr2low = 20
+            self.freqsnr2high = 35
 
     # string representation
     def __str__(self):
